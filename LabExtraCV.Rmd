@@ -1,0 +1,148 @@
+---
+title: "Cross-Validation"
+output: html_document
+---
+
+Load the data in as before and set up a small
+subset that we can use for debugging our code.
+
+```{r}
+#load(url("http://www.stat.berkeley.edu/users/nolan/data/EmailsDist.rda"))
+
+set.seed(1234)
+idx1 = sample(which(isSpam), 20)
+idx2 = sample(which(!isSpam), 20)
+idx = sample(c(idx1, idx2))
+distSmall = distEmails[ idx, idx]
+iS = isSpam[idx]
+```
+
+We will assume that we already have the predNeighbor
+function ready and working.
+
+For cross-validation, we need to partition our 
+data into random non-overlapping pieces.
+
+An easy way to do this is to work through the 
+indices of the data, and not the data itself.
+
+The sample function can give us a random permutation.
+Try calling sample with the following inputs to
+see what I mean
+
+```{r}
+sample(10)
+sample(10)
+sample(10)
+```
+
+So, let's get a random permutation of the indices
+for the rows of our small distance matrix.
+
+```{r}
+n = nrow(distSmall)
+# Set the seed so we all get the same results
+set.seed(12344321)
+permRows = sample(n)
+permRows
+
+# This should look like 
+#  [1] 33 15 19  1 23  8  5  6 32 30 35 20 17 ...
+
+# Now we can just reformat the permRows and have our folds
+# (To make life easy for us, we drop any extra rows  
+# and make n/v an integer)
+
+v = 5
+folds = matrix(permRows, byrow = TRUE, nrow = v)
+folds[1, ]
+#[1] 33 15 19  1 23  8  5  6
+
+```
+
+
+Now we have all of the material to call predNeighbor.
+For each fold we extract from the matrix of distances
+those rows that correspond to the fold and the columns
+that correspond to the rest.
+
+```{r}
+dd = distSmall[ folds[1,], folds[ -1, ]]
+
+predNeighbor(k = 7, dd, iS[folds[ -1, ]])
+```
+
+
+We can loop over all of the folds and put together the values for a particular k
+The only hard part is putting them in the right spots
+
+Let's begin by creating a vector to hold the 
+votes. It should be the same length as the number
+of emails.
+
+Some of the indices have been left out of the code 
+below. Figure out what should go in the YOUR CODe
+HERE blocks. Some should be [ i, ] others should be
+[-i, ]
+
+```{r}
+vs = vector("numeric", length = n)
+
+for (i in 1:v) {
+  vs[folds[i,]] = 
+       predNeighbor(k = 7, 
+        distSmall[ folds[i,], 
+                   folds[-i,]], 
+        iS[folds[ -i, ]]) 
+}
+```
+
+
+It would be better if we vectorized predNeighbor, 
+but for now this works well enough.
+
+Now generalize this all and write your function:
+
+```{r}
+cvKnn = function(distances, isSpam, k, v = 5) {
+  n = nrow(distances)
+  permRows = sample(1:n, floor(n/v) * v)
+  folds = matrix(permRows, byrow = TRUE, nrow = v)
+  
+  vs = matrix(0, nrow = n, ncol = length(k))
+  for (j in 1:length(k)) {
+    for (i in 1:v) {
+      vs[folds[i,], j] = predNeighbor(k = k[j], 
+                                      distMat = distances[folds[i,], folds[-i,]], 
+                                      indSpam = isSpam[folds[-i,]]) 
+    } 
+  }
+  
+  return(vs) 
+}
+
+```
+
+
+
+
+Try it out on our small guys:
+
+```{r}
+cvKnn(distances = distSmall, isSpam = iS, k = 3:5, v =5)
+
+#           [,1] [,2] [,3]
+# [1,] 0.0000000 0.00  0.0
+# [2,] 0.0000000 0.00  0.0
+# [3,] 0.3333333 0.25  0.4
+# [4,] 0.0000000 0.00  0.0
+# [5,] 0.3333333 0.25  0.2
+# [6,] 0.6666667 0.75  0.8
+# [7,] 0.0000000 0.00  0.0
+# [8,] 0.3333333 0.50  0.6
+# [9,] 1.0000000 1.00  1.0
+#[10,] 0.0000000 0.00  0.0 ...
+```
+
+
+

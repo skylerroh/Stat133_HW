@@ -1,0 +1,108 @@
+---
+title: "EDA"
+output: pdf_document
+---
+
+
+```{r}
+load(url(
+  "http://www.stat.berkeley.edu/users/nolan/data/exploreData.rda"))
+```
+
+This workspace has several variables that you may want to 
+investigate to gain practice with exploring 
+univariate distributions and relationships between variables.
+
+```{r, echo=FALSE}
+ls()
+```
+
+The variables bwt and gestation are from a study of infant
+health. They consist of the birth weight and corresponding
+gestation (length of time in utero) for about 1200 babies.
+
+The variables height, weight and bmi are measurement on 
+individuals who participated in the BRFSS (behavioral risk
+factor surveillance survey).
+
+We will explore the bwt and gestation of the infants.
+Often measurements on objects in nature follow the 
+normal distribution. Is that the case for birth weight?
+and gestation?
+
+Let's explore these distributions. We start with the default
+bin width for making the density plot, and explore options.
+
+```{r}
+par(mfrow = c(2,2), mar = c(4,2,2,2))
+plot(density(bwt, bw = 0.5), main = "")
+plot(density(bwt, bw = 2.8), main ="")
+plot(density(bwt), main = "")
+plot(density(bwt, bw = 10), main="")
+```
+
+- The default bin width is pretty good, 
+but I prefer the smaller value of 2.8,
+which shows that there might be a small shoulder 
+on the left side of the distributon.
+
+- The bin width of 0.5 is too small, we see the individual values
+and not the general shape
+
+- The bin width of 10 is too large, we see the shape of the smoother that is used (the normal curve) and not the shape
+of the data.
+
+When we look at distributions, we examine:
+
+- Symmetry and skewness: is the curve symmetric about a point, or is there more mass to the right (right skew) or to the left (left skew)
+
+- Modes: how many main modes are there and where are they roughly 
+located?
+
+- Tails: are they long or short? This distinction is typically 
+made in comparison to the normal curve tails.
+
+- Gaps and anomalies: Are there any gaps where no values are observe? Are they any unusually large or small values?
+
+We try to connect the shapes that we see to the properties
+of the variable. For example, ask yourself, why might there
+be two modes? or outliers? or a long right tail?
+
+We would summarize the birth weight distribution as 
+roughly symmetric, unimodal, with a slightly longer left tail.
+This longer left tail (and bump on the left) may be associated
+with premature babies.
+
+Next we examine the gestation varialble. Here we see another 
+symmetric, unimodal distribution. It is highly peaked, but
+there are some unusually small values, e.g., 150 and 200.
+Why might this be the case?
+
+```{r}
+hist(gestation, breaks = 30)
+```
+
+With skewed distributions, we typicall transform them to 
+symmetric distributions because symmetric distributions have
+better statistical properties.
+
+
+To examine the relationship between birth weight and gestation
+we can make a scatter plot. We look for linear, curvilinear
+associations. If it's curvilinear, we typically try to 
+transform one or both of the variables to get a linear association.
+This helps us understand the relationship between the variables 
+better.
+For example if a scatter plot of log(y) against log(x) is
+roughly linear, that indicates that ther is a power law 
+relationship between x and y, e.g., $y = cx^b$.
+
+```{r}
+smoothScatter(y = bwt, x = gestation)
+smoothScatter(y = bwt, x = gestation, xlim = c(225, 350))
+```
+
+The correlation between birth weight and gestation is
+`r cor(bwt, gestation)`.
+Well, how about `r cor(bwt, gestation, use = "complete")`
+
